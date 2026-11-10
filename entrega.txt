@@ -1,0 +1,105 @@
+1 - Descricao do Problema
+
+    Bom esse é um problema classico de caminho com peso, cujo objetivo é encontrar o caminho de menor custo para o ponto de partida, 
+sendo partida [0][0] e chegada a outra diagonal. O "robo" descrito pelo problema somente anda para direita ou baixo
+isto significa que ele somente anda para [linha_atual+1][coluna] ou [linha_atual][coluna+1], em seguida temos a
+matriz que representa o mapa, nela cada ponto se tem custo, podendo ser um inteiro acima de zero ou null, valor nulo representando 
+um obstaculo. Quanto ao mapa tem se que ele deve ser um quadrado, ou um retangulo, caso nao seja preenchido
+todos os valores da matriz no formato descrito, por exemplo: {"custos": [[1, null], [1]]} 
+deve retornar {"status: "entrada_invalida", "erro": "mensagem"}. 
+    Tambem existe mais um caso de borda, quando o robo fica preso no mapa,
+ou seja direita e baixo = null, como por exemplo o caso do: {"custos": [[1, null], [null, 2]]} <- REVISAR
+
+ deve se retornar {"status: "sem_caminho", "custo: "null"}. Agora, com os casos de erro entendidos.
+Quando a entrada da matriz é valida como por exemplo: {"custos": [[2, 1, 9, 9, 9],[3, null, 1, 1, 9],[1, 1, 1, null, 2],[9, 9, 1, 1, 1]]}
+o retorno esperado é {"status": "ok", "custo": MENOR_CUSTO}.
+
+5 - Medicao do trabalho
+
+    Para medir o trabalho do algoritmo recursivo, foi colocado um contador na
+entrada da funcao movimentar. Cada chamada soma 1, incluindo a chamada inicial
+em [0][0], as chamadas que chegam ao destino e as que encontram um obstaculo.
+O contador e reiniciado para cada matriz. As funcoes auxiliares e o metodo
+resolver nao entram na contagem.
+
+    Os resultados abaixo foram obtidos executando a implementacao em Rust.
+As dimensoes estao no formato linhas x colunas. Nas cinco primeiras grades,
+todas as casas possuem custo 1 e nao existem obstaculos.
+
+    Grade                  Chamadas de movimentar    Menor custo
+    2x3                              9                    4
+    3x3                             19                    5
+    6x6                            923                   11
+    10x10                      184.755                   19
+    1x10                            10                   10
+    Exemplo (4x5)                   43                   11
+
+    Matriz do exemplo utilizada:
+    {"custos": [[2, 1, 9, 9, 9], [3, null, 1, 1, 9], [1, 1, 1, null, 2], [9, 9, 1, 1, 1]]}
+
+    O programa verifica os limites antes de chamar movimentar para a direita
+ou para baixo. Portanto, nao existem chamadas para posicoes fora da grade.
+O destino e os obstaculos encerram a chamada sem gerar novas chamadas.
+
+    Para conferir os valores nas grades sem obstaculos, podemos definir
+T(linha, coluna) como a quantidade de chamadas a partir daquela posicao.
+No destino, T = 1. Nas demais casas, T = 1 + T(direita) + T(baixo), incluindo
+somente os vizinhos que existem dentro da grade. Para uma grade de L linhas
+e C colunas, essa contagem resulta em binomial(L + C, L) - 1.
+Por exemplo, na grade 10x10: binomial(20, 10) - 1 = 184.755.
+Assim, os valores medidos coincidem com a contagem teorica de chamadas
+restritas ao interior da grade.
+
+    A grade do exemplo possui obstaculos, entao a formula para grades livres
+nao se aplica. Foram medidas 43 chamadas, pois os ramos que chegam a null
+param imediatamente. Uma grade 4x5 sem obstaculos teria 125 chamadas.
+Os custos das casas nao alteram a quantidade de chamadas nesta implementacao:
+o algoritmo explora as duas direcoes disponiveis antes de escolher o menor
+custo. A mesma casa pode ser processada varias vezes por caminhos diferentes,
+pois nao ha memorizacao de resultados.
+
+    A quantidade de chamadas nao representa a quantidade de movimentos de
+um unico caminho. Na grade 10x10, por exemplo, um caminho completo possui
+18 movimentos e visita 19 casas, mas a busca realiza 184.755 chamadas para
+comparar as alternativas. Se uma contagem desconsiderar a chamada inicial,
+tera uma chamada a menos; se desconsiderar obstaculos ou chamar posicoes
+fora da grade, usara outro criterio e tambem podera apresentar diferencas.
+
+    Para reproduzir a medicao e conferir os resultados automaticamente:
+    cargo test medir_chamadas_recursivo -- --nocapture
+
+    Medicao do algoritmo guloso
+
+    O guloso e iterativo: seu metodo resolver e chamado uma unica vez por
+matriz e nao realiza chamadas recursivas. Para medir seu trabalho, foi
+adicionado um contador incrementado no inicio de cada iteracao do while.
+Ele conta as tentativas de avancar, incluindo uma eventual tentativa em que
+o robo fica preso. A casa inicial nao conta como iteracao. Quando o destino
+e alcancado, o laco termina sem uma nova iteracao.
+
+    Grade            Chamadas de resolver    Iteracoes    Custo obtido
+    2x3                       1                   3              4
+    3x3                       1                   4              5
+    6x6                       1                  10             11
+    10x10                     1                  18             19
+    1x10                      1                   9             10
+    Exemplo (4x5)             1                   7             26
+
+    Nas grades sem obstaculos, o guloso realiza L + C - 2 iteracoes, pois
+segue um unico caminho com L - 1 movimentos para baixo e C - 1 para a direita.
+Cada iteracao examina no maximo dois vizinhos dentro da grade e escolhe um.
+Assim, seu trabalho cresce linearmente com L + C, enquanto o recursivo
+explora as alternativas e pode processar a mesma casa varias vezes.
+
+    Na grade do exemplo, o guloso realiza 7 iteracoes e visita 8 casas,
+obtendo custo 26. O recursivo realiza 43 chamadas e encontra o custo minimo
+11. Portanto, o guloso trabalha menos nesse exemplo, mas sua escolha local
+nao garante o menor custo total. As iteracoes do guloso e as chamadas do
+recursivo sao medidas diferentes, conforme os criterios descritos acima.
+
+    Se partida ou destino estiverem bloqueados, o guloso retorna antes do
+laco, com zero iteracoes. Uma grade 1x1 livre tambem exige zero iteracoes,
+pois o robo ja comeca no destino.
+
+    Para reproduzir a medicao do guloso:
+    cargo test medir_iteracoes_guloso -- --nocapture
