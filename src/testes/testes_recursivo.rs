@@ -80,6 +80,7 @@ fn medir_chamadas_recursivo() {
 
         assert_eq!(chamadas, esperado, "Grade {linhas}x{colunas}");
         assert_eq!(resultado, serde_json::json!({"status": "ok", "custo": linhas + colunas - 1}));
+        
         println!("Recursivo | Grade {linhas}x{colunas}: {chamadas} chamadas de movimentar; {resultado}");
     }
 

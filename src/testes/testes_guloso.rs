@@ -17,6 +17,18 @@ fn teste_matriz_4x4() {
 }
 
 #[test]
+fn teste_guloso_nao_encontra_otimo_4x4() {
+    let entrada = serde_json::from_str(
+        r#"{"custos": [[1, 1, 9, 9], [2, 9, 9, 9], [1, 9, 9, 9], [1, 1, 1, 1]]}"#,
+    ).unwrap();
+
+    let (guloso, _) = Guloso.resolver(&entrada);
+    let (ideal, _) = crate::recursivo::Recursivo.resolver(&entrada);
+
+    assert_eq!(guloso, serde_json::json!({"status": "ok", "custo": 39}));
+}
+
+#[test]
 fn teste_sem_caminho() {
     for json in [
         r#"{"custos": [[null, 1], [1, 2]]}"#,
@@ -40,9 +52,12 @@ fn medir_iteracoes_guloso() {
         let entrada = crate::entrada::Entrada {
             custos: vec![vec![Some(1); colunas]; linhas],
         };
+        
         let (resultado, iteracoes) = Guloso.resolver(&entrada);
+        
         assert_eq!(iteracoes, esperado, "Grade {linhas}x{colunas}");
         assert_eq!(resultado, serde_json::json!({"status": "ok", "custo": linhas + colunas - 1}));
+        
         println!("Guloso | Grade {linhas}x{colunas}: 1 chamada de resolver; {iteracoes} iteracoes; {resultado}");
     }
 
